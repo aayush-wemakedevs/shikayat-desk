@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Shikayat Desk</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #101211;
+      --panel: #191b19;
+      --inset: #131513;
+      --border: #323632;
+      --text: #f1f2ed;
+      --muted: #aab0a7;
+      --accent: #d9f287;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans Devanagari",
+        "Kohinoor Devanagari", "Devanagari Sangam MN", "Nirmala UI", sans-serif;
+      line-height: 1.55;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--background); color: var(--text); }
+    main { width: min(1100px, calc(100% - 48px)); margin: 0 auto; padding: 56px 0; }
+    header { display: flex; align-items: center; gap: 16px; margin-bottom: 31px; }
+    .mark {
+      display: grid; place-items: center; width: 48px; height: 48px;
+      border: 1px solid #657346; border-radius: 13px; color: var(--accent);
+      font-size: 1.6rem; background: #252d1b; flex: none;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(2rem, 5vw, 2.65rem); line-height: 1.07; letter-spacing: -.055em; }
+    header p { font-size: .9rem; color: var(--muted); margin-top: 5px; }
+    .desk { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 22px; min-width: 0; }
+    h2 { font-size: 1.18rem; letter-spacing: -.018em; margin-bottom: 17px; }
+    h3 { font-size: .875rem; font-weight: 650; margin-bottom: 8px; }
+    .recorder {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 12px; padding: 14px; background: var(--inset); border: 1px solid var(--border); border-radius: 12px;
+    }
+    button {
+      border: 1px solid transparent; border-radius: 8px; padding: 9px 14px; cursor: pointer;
+      background: var(--accent); color: #1c2611; font: inherit; font-weight: 700; font-size: .875rem;
+    }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    button:disabled { opacity: .5; cursor: default; }
+    .timer, .number { font-variant-numeric: tabular-nums; }
+    .timer { font-size: .92rem; white-space: nowrap; }
+    .timer span { color: var(--muted); }
+    .status { color: var(--muted); font-size: .875rem; margin-top: 10px; min-height: 1.55em; }
+    .status[data-error="true"] { color: var(--text); font-weight: 650; }
+    .conversation { display: flex; flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 18px; }
+    .bubble { max-width: 91%; min-width: 0; padding: 15px 16px; border-radius: 12px 12px 12px 3px; background: #222522; border: 1px solid #363b35; }
+    .bubble.agent { align-self: flex-end; border-radius: 12px 12px 3px 12px; background: #262f1f; border-color: #414e35; }
+    .bubble p, .agent-text, dd, pre { overflow-wrap: anywhere; }
+    .bubble p { font-size: 1.05rem; }
+    .bubble-head { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 5px; margin-bottom: 8px; }
+    .bubble-head h3 { margin: 0; }
+    .chip { color: var(--accent); font-size: .78rem; font-variant-numeric: tabular-nums; }
+    .play { margin-top: 12px; background: transparent; color: var(--accent); padding: 6px 10px; border-color: #5d6e45; }
+    .agent-section + .agent-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .empty, .note { color: var(--muted); font-size: .875rem; }
+    .agent-text { font-size: .96rem; }
+    dl { margin: 0; }
+    dl div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 3px 0; }
+    dt { color: var(--muted); font-size: .875rem; }
+    dd { margin: 0; text-align: right; font-size: .875rem; }
+    #ticket-summary { margin-top: 7px; }
+    pre { margin: 7px 0 0; color: var(--text); font-size: .81rem; white-space: pre-wrap; }
+    [hidden] { display: none !important; }
+    @media (max-width: 750px) {
+      main { width: min(100% - 30px, 540px); padding: 30px 0; }
+      .desk { grid-template-columns: 1fr; }
+      .panel { padding: 17px; }
+      .bubble { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="mark" aria-hidden="true">शि</div>
+      <div><h1>Shikayat Desk</h1><p>Electricity customer support</p></div>
+    </header>
+    <div class="desk">
+      <section class="panel" aria-labelledby="conversation-title">
+        <h2 id="conversation-title">Conversation</h2>
+        <div class="recorder">
+          <button type="button" id="record">Record complaint</button>
+          <div class="timer" aria-label="Recording time"><output id="elapsed">0:00</output><span> / 0:25</span></div>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite">Record up to 25 seconds in your language.</p>
+        <div class="conversation" id="conversation" hidden>
+          <article class="bubble">
+            <div class="bubble-head"><h3>Customer</h3><span class="chip" id="language"></span></div>
+            <p id="transcript" dir="auto"></p>
+          </article>
+          <article class="bubble agent">
+            <h3>Support reply</h3>
+            <p id="reply" dir="auto"></p>
+            <button class="play" type="button" id="play">Play reply</button>
+          </article>
+        </div>
+      </section>
+      <aside class="panel" aria-labelledby="agent-title">
+        <h2 id="agent-title">Agent panel</h2>
+        <section class="agent-section">
+          <h3>English translation</h3>
+          <p id="english-empty" class="empty">Appears after recording.</p>
+          <p id="english" class="agent-text" hidden></p>
+        </section>
+        <section class="agent-section">
+          <h3>Ticket</h3>
+          <p id="ticket-empty" class="empty">Appears after recording.</p>
+          <div id="ticket" hidden>
+            <dl>
+              <div><dt>Category</dt><dd id="category"></dd></div>
+              <div><dt>Urgency</dt><dd id="urgency"></dd></div>
+            </dl>
+            <p id="ticket-summary" class="agent-text"></p>
+          </div>
+          <div id="ticket-fallback" hidden>
+            <p class="note">Sarvam returned an unparsed ticket.</p><pre id="ticket-raw"></pre>
+          </div>
+        </section>
+        <section class="agent-section">
+          <h3>Per-call timings</h3>
+          <dl class="number">
+            <div><dt>Transcribe</dt><dd id="stt">—</dd></div>
+            <div><dt>Translate</dt><dd id="translate">—</dd></div>
+            <div><dt>Generate reply</dt><dd id="chat">—</dd></div>
+            <div><dt>Synthesize speech</dt><dd id="tts">—</dd></div>
+          </dl>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const get = (id) => document.getElementById(id);
+    const recordButton = get('record');
+    const playButton = get('play');
+    const limitMs = 25_000;
+    let recorder;
+    let player;
+    let timer;
+    let limit;
+
+    function setStatus(message, isError = false) {
+      get('status').textContent = message;
+      get('status').dataset.error = String(isError);
+    }
+
+    function updateTimer(milliseconds) {
+      const seconds = Math.min(25, Math.floor(milliseconds / 1000));
+      get('elapsed').textContent = `0:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function stopRecording() {
+      clearInterval(timer);
+      clearTimeout(limit);
+      recordButton.disabled = true;
+      if (recorder?.state === 'recording') recorder.stop();
+    }
+
+    async function startRecording() {
+      recordButton.disabled = true;
+      player?.pause();
+      updateTimer(0);
+      setStatus('Opening microphone…');
+      let stream;
+      try {
+        if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+          throw new Error('Recording is unavailable in this browser. Open the page on localhost in Chrome.');
+        }
+        stream = await navigator.mediaDevices.getUserMedia({audio: true});
+        const mimeType = ['audio/webm;codecs=opus', 'audio/mp4'].find((type) => MediaRecorder.isTypeSupported(type));
+        recorder = new MediaRecorder(stream, mimeType ? {mimeType} : undefined);
+        const activeRecorder = recorder;
+        const chunks = [];
+        let recordingFailed = false;
+        activeRecorder.addEventListener('dataavailable', (event) => {
+          if (event.data.size) chunks.push(event.data);
+        });
+        activeRecorder.addEventListener('error', () => {
+          recordingFailed = true;
+          stopRecording();
+          stream.getTracks().forEach((track) => track.stop());
+          recordButton.textContent = 'Record complaint';
+          recordButton.disabled = false;
+          setStatus('The microphone stopped recording. Please try again.', true);
+        });
+        activeRecorder.addEventListener('stop', () => {
+          clearInterval(timer);
+          clearTimeout(limit);
+          stream.getTracks().forEach((track) => track.stop());
+          if (!recordingFailed) {
+            submitRecording(new Blob(chunks, {type: activeRecorder.mimeType || chunks[0]?.type || 'audio/webm'}));
+          }
+        });
+        activeRecorder.start();
+        const started = performance.now();
+        timer = setInterval(() => updateTimer(performance.now() - started), 100);
+        limit = setTimeout(() => { updateTimer(limitMs); stopRecording(); }, limitMs);
+        recordButton.textContent = 'Stop recording';
+        recordButton.disabled = false;
+        setStatus('Recording…');
+      } catch (error) {
+        stream?.getTracks().forEach((track) => track.stop());
+        recordButton.disabled = false;
+        setStatus(error.name === 'NotAllowedError' ? 'Allow microphone access in your browser and try again.' : error.message, true);
+      }
+    }
+
+    async function submitRecording(blob) {
+      recordButton.disabled = true;
+      recordButton.textContent = 'Processing…';
+      setStatus('Transcribing your complaint and preparing a reply…');
+      try {
+        if (!blob.size) throw new Error('The recording was empty. Please try again.');
+        const form = new FormData();
+        form.append('file', blob, blob.type.includes('mp4') ? 'complaint.m4a' : 'complaint.webm');
+        const response = await fetch('/api/complaint', {method: 'POST', body: form});
+        const data = await response.json();
+        if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : `Request failed (HTTP ${response.status}).`);
+        renderResult(data);
+        setStatus('Reply ready.');
+      } catch (error) {
+        setStatus(error.message || 'Could not process the complaint.', true);
+      } finally {
+        recordButton.textContent = 'Record complaint';
+        recordButton.disabled = false;
+      }
+    }
+
+    function renderResult(data) {
+      get('transcript').textContent = data.transcript;
+      get('transcript').lang = data.language_code;
+      get('reply').textContent = data.reply;
+      get('reply').lang = data.language_code;
+      const confidence = typeof data.language_probability === 'number'
+        ? `${(data.language_probability * 100).toFixed(1)}% confidence`
+        : 'Confidence unavailable';
+      get('language').textContent = `${data.language_code} · ${confidence}`;
+      get('conversation').hidden = false;
+      get('english-empty').hidden = true;
+      get('english').textContent = data.english;
+      get('english').hidden = false;
+
+      const rawTicket = typeof data.ticket === 'string';
+      get('ticket-empty').hidden = true;
+      get('ticket').hidden = rawTicket;
+      get('ticket-fallback').hidden = !rawTicket;
+      if (rawTicket) {
+        get('ticket-raw').textContent = data.ticket;
+      } else {
+        get('category').textContent = data.ticket.category;
+        get('urgency').textContent = data.ticket.urgency;
+        get('ticket-summary').textContent = data.ticket.summary;
+      }
+      const number = new Intl.NumberFormat('en', {maximumFractionDigits: 1});
+      for (const stage of ['stt', 'translate', 'chat', 'tts']) {
+        get(stage).textContent = `${number.format(data.timings_ms[stage])} ms`;
+      }
+
+      player?.pause();
+      player = new Audio('data:audio/wav;base64,' + data.audio_base64);
+      playButton.textContent = 'Play reply';
+      player.addEventListener('play', () => { playButton.textContent = 'Pause reply'; });
+      player.addEventListener('pause', () => { playButton.textContent = 'Play reply'; });
+      player.addEventListener('ended', () => { playButton.textContent = 'Play reply'; });
+    }
+
+    recordButton.addEventListener('click', () => {
+      if (recorder?.state === 'recording') stopRecording();
+      else startRecording();
+    });
+    playButton.addEventListener('click', async () => {
+      if (!player) return;
+      if (!player.paused) { player.pause(); return; }
+      try { await player.play(); }
+      catch { setStatus('The browser could not play the reply.', true); }
+    });
+  </script>
+</body>
+</html>
